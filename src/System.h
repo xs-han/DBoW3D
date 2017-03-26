@@ -31,6 +31,8 @@ public:
 	void LoadK(const string & CalibFile);
 	void MakeCameraView();
 	void VisualSFM(const string & imagefolder);
+	const void PrintAllKeypoints(int KeyFrameId = 0) const;
+	const void PrintAllFrames(int Pt3dId = 0) const;
 	virtual ~System();
 
 private:
@@ -55,14 +57,15 @@ private:
 	vector<string> _names;
 	// 3D points
 	vector<cv::Point3d> _point_data; // [X, Y, Z]
-	vector<vector<pair<int, int> > > _measurements_idxs; // [cidx, fidx]
+	vector<vector<int> >_measurements_cidxs; // [cidx]
+	vector<vector<int> >_measurements_fidxs; // [fidx]
 	vector<vector<cv::Point2d> > _measurements; // [mx+cx, my+cy]
 //	vector<vector<int> > _point3d_ids;
 //	vector<vector<int> > _pointMap;
 //	vector<int> _ptc;
 
 	cv::Matx33d _K;
-	string jpgfolder;
+	string _jpgfolder;
 	vector<string> _filenames;
 };
 

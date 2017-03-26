@@ -13,6 +13,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include "DataInterface.h"
+#include <map>
 
 using namespace std;
 using namespace cv;
@@ -27,18 +28,25 @@ public:
 	virtual ~View();
 	int Create(const int cidx, const string & name, const CameraT & cam);
 	void setCameraPose(const CameraT & cam);
-	int setKeypoints(const int fidx, const cv::Point2d & pt);
-	void set3dPoints(const int fidx, const cv::Point3d & pt3d);
+	int setKeypoints(const int fidx, const cv::Point2d & pt, bool getfeatures);
+	int set3dPoints(const int fidx, const int PointId);
 	int getCidx() const;
 	void setCidx(int cidx);
 	const string& getName() const;
 	void setName(const string& name);
 	const cv::Matx33d& getR() const;
 	const cv::Matx31d& getT() const;
+	const vector<cv::Mat>& getFeatures() const;
+	const vector<cv::KeyPoint>& getKps() const;
+	const vector<int>& getPts3dId() const;
+	const cv::Mat& getImg() const;
+
+	map<int, int> fidx2kpsidx;
+	map<int, int> kpsidx2fidx;
 
 private:
 	string _name;
-	int _cidx; // camera index
+	int _cidx = -1; // camera index
 	cv::Matx33d _R;
 	cv::Matx31d _T;
 
@@ -48,7 +56,7 @@ private:
 
 	vector<cv::KeyPoint> _kps;
 	vector<cv::Mat> _features;
-	vector<cv::Point3d> _pts3d;
+	vector<int> _pts3dId;
 };
 
 #endif /* VIEW_H_ */

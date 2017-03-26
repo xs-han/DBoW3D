@@ -7,17 +7,18 @@
 
 #include "View.h"
 
+#define mynorm(x,y) (((x) * (x) + (y) * (y)))
+
 View::View():_cidx(-1){
 	// TODO Auto-generated constructor stub
 }
 
 View::View(const string & name,
-		const Mat & img,
-		const vector<cv::KeyPoint> key,
-		const Mat & desc):
-				_name(name), _img(img),
-				_opencvfeatures(desc),
-				_cidx(-1)
+			const Mat & img,
+			const vector<cv::KeyPoint> key,
+			const Mat & desc):
+			_name(name), _cidx(-1),_img(img),
+			_opencvfeatures(desc)
 {
 	for(int i = 0; i < (int)key.size(); i++)
 	{
@@ -28,6 +29,8 @@ View::View(const string & name,
 											key[i].octave,
 											key[i].class_id));
 	}
+	//_kps.resize(_opencvkps.size());
+	//_opencvfeatures.create(desc.rows,desc.cols,CV_32F);
 }
 
 View::~View() {
@@ -64,48 +67,49 @@ void View::setCameraPose(const CameraT & cam)
 	}
 }
 
-int View::setKeypoints(const int fidx, const Point2d & pt)
+int View::setKeypoints(const int fidx, const Point2d & pt, bool getfeatures)
 {
-	if(fidx > (int)_kps.size())
-		_kps.resize(fidx + 1);
+//	if(fidx > (int)_kps.size())
+//	{
+//		cout << "Error: Incorrect feature idx. Larger than size of kps." << endl;
+//		return -1;
+//	}
 	if(_name.empty())
 	{
-		cout << "Error: Need name to call Create() first." << endl;
-		return -1;
+		cout << "Error: Need name to be created first." << endl;
+		return -2;
 	}
 
-	int minidx = 0; double dis = 640 * 640 + 480 * 480; double curdis;
-	for(int i = 0; i < (int)_opencvkps.size(); i++)
+	//cout << sqrt(mynorm(_opencvkps[fidx].pt.x - pt.x, _opencvkps[fidx].pt.y - pt.y)) << endl;
+	if(sqrt(mynorm((_opencvkps[fidx].pt.x - pt.x), (_opencvkps[fidx].pt.y - pt.y))) > 1 )
 	{
-		curdis = (_opencvkps[i].pt.x - (float)pt.x) *
-				(_opencvkps[i].pt.x - (float)pt.x) +
-				(_opencvkps[i].pt.y - (float)pt.y) *
-				(_opencvkps[i].pt.y - (float)pt.y);
-		if(curdis == 0 )
-		{
-			_kps[fidx] = _opencvkps[i];
-			cv::imshow(_name, _img);
-			cv::waitKey(0);
-			return 1;
-		}
-		else if(curdis < dis)
-		{
-			dis = curdis;
-			minidx = i;
-		}
+		cout << "Error: Key point " << fidx << "can not be found." << endl;
+		return -3;
 	}
 
-	cout << "Warning: No matched point found for feature " << fidx << ". The min dis is: " << dis << endl;
-	_kps[fidx] = _opencvkps[minidx];
+	_kps.push_back(KeyPoint( _opencvkps[fidx].pt,
+			_opencvkps[fidx].size,
+			_opencvkps[fidx].angle,
+			_opencvkps[fidx].response,
+			_opencvkps[fidx].octave,
+			_opencvkps[fidx].class_id));
+	fidx2kpsidx[fidx] = (int)_features.size();
+	kpsidx2fidx[(int)_features.size()] = fidx;
+	if(getfeatures)
+		_features.push_back(_opencvfeatures.row(fidx));
 	return 1;
 }
 
-void View::set3dPoints(const int fidx, const cv::Point3d & pt3d)
+int View::set3dPoints(const int fidx, const int PointId)
 {
-	if(fidx > (int)_pts3d.size())
-		_pts3d.resize(fidx + 1);
+	if(fidx2kpsidx[fidx] != (int)_pts3dId.size())
+	{
+		cout << "Need to set 2D features first." << endl;
+		return -1;
+	}
 	// Need To Check: Point2d -> KeyPoint;
-	_pts3d[fidx] = cv::Point3d(pt3d);
+	_pts3dId.push_back(PointId);
+	return 1;
 }
 
 int View::getCidx() const {
@@ -132,3 +136,18 @@ const cv::Matx31d& View::getT() const {
 	return _T;
 }
 
+const vector<cv::Mat>& View::getFeatures() const {
+	return _features;
+}
+
+const vector<cv::KeyPoint>& View::getKps() const {
+	return _kps;
+}
+
+const vector<int>& View::getPts3dId() const {
+	return _pts3dId;
+}
+
+const cv::Mat& View::getImg() const {
+	return _img;
+}

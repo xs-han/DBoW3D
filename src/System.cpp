@@ -20,15 +20,15 @@ System::~System() {
 void System::VisualSFM(const string & imagefolder)
 {
 	int errorflag;
-	jpgfolder = imagefolder;
+	_jpgfolder = imagefolder;
 	// Get all features
-	if((errorflag = CreateOpencvKeypoints(jpgfolder, 3000, 16) < 0))
+	if((errorflag = CreateOpencvKeypoints(_jpgfolder, 3000, 16) < 0))
 		exit(errorflag);
 	// Store all features in .sift files
-	if((errorflag = StoreSiftFiles()) < 0)
-		exit(errorflag);
+//	if((errorflag = StoreSiftFiles()) < 0)
+//		exit(errorflag);
 	// TODO: Add integrated VisualSFM commands with socket
-	system("VisualSFM");
+	//system("VisualSFM");
 }
 
 int System::CreateOpencvKeypoints(string & jpgfolder, int np, int noctave)
@@ -153,7 +153,7 @@ void System::LoadNVM(const string & nvm)
 	int errorflag = 0;
 	if(nvm == "")
 	{
-		if((errorflag = LoadNVMData(jpgfolder + "sfm.nvm") < 0))
+		if((errorflag = LoadNVMData(_jpgfolder + "sfm.nvm") < 0))
 			exit(errorflag);
 	}
 	else
@@ -257,11 +257,13 @@ int System::LoadNVMData(const string & nvmFile){
 	//for each 3D point, we check the reprojection error of each view
 	_point_data.clear();
 	_measurements.clear();
-	_measurements_idxs.clear();
+	_measurements_cidxs.clear();
+	_measurements_fidxs.clear();
 	//_pointMap.clear();
 	_point_data.resize(npoint);
 	_measurements.resize(npoint);
-	_measurements_idxs.resize(npoint);
+	_measurements_cidxs.resize(npoint);
+	_measurements_fidxs.resize(npoint);
 	//_pointMap.resize(npoint);
 	//int outlier_count = 0;
 	//int he = 0;
@@ -284,7 +286,8 @@ int System::LoadNVMData(const string & nvmFile){
 				cout << "This is a valid check for resolution 640x480" << endl;
 				cout << "Invalid feature location exist. At Camera: " << cidx << " Feature: " << fidx << endl;
 			}
-			_measurements_idxs[id].push_back(std::make_pair(cidx, fidx));
+			_measurements_cidxs[id].push_back(cidx);
+			_measurements_fidxs[id].push_back(fidx);
 		}
 		nproj += npj;
 
@@ -376,51 +379,154 @@ int System::CreateCameraViews()
 	// Check valid solution of NVM data.
 	int npoints = (int)_point_data.size();
 	if(_point_data.size()!=_measurements.size() ||
-			_measurements.size() != _measurements_idxs.size())
+			_measurements.size() != _measurements_cidxs.size())
 	{
 		cout << "Error: The size of 3D points' locations, measures are not same." << endl;
 		return -1;
 	}
-	int ncam = _camera_data.size();
-	if(_KeyFrames.size()!=_names.size())
+	int ncam = (int)_KeyFrames.size();
+	if(_KeyFrames.size()!=_names.size() || _names.size()!=_camera_data.size())
 	{
-		cout << "Error: The size of cameras and corresponding names are not same." << endl;
+		cout << "Error: The # of original images and cameras from nvm are not same." << endl;
 		return -2;
 	}
 
-	_KeyFrames.resize(ncam);
+	//Set camera poses
 	for(int i = 0; i < ncam; i++)
 	{
-		_KeyFrames[i].Create(i, _names[i], _camera_data[i]);
-	}
-	for(int i = 0; i < npoints; i++)
-	{
-		int nfeatures = (int)_measurements[i].size();
-		if(_measurements[i].size()!=_measurements_idxs[i].size())
-		{
-			cout << "Error: The size of measures and idxes are not same." << endl;
-			return -3;
-		}
+		//debug
+		int* debugarray = new int[ncam];
+		for(int j = 0; j < ncam; j++) debugarray[j] = 0;
 
-		for(int j = 0; j < nfeatures; j++)
+		//get same camera via name, because the order of camera data
+		// is different from that the order of filenames in the jpg folder
+		int chosenj = 0;
+		for(int j = 0; j < ncam; j++)
 		{
-			int cameraidx = _measurements_idxs[i][j].first;
-			int featureidx = _measurements_idxs[i][j].second;
-			if(cameraidx > ncam)
+			if(_KeyFrames[j].getName() == _jpgfolder+_names[i])
 			{
-				cout << "Error: The idx of camera cannot be found." << endl;
+				_KeyFrames[j].setCameraPose(_camera_data[i]);
+				chosenj = j;
+				debugarray[j]++;
+			}
+		}
+		// Currently, we store key frames in the alphabet order of filenames.
+		// but in the nvm file, the order of images is changed.
+		// Image index/Camera index is in accordance with the order in nvm file.
+		// Here, we change the order of key frames to the nvm order.
+		std::swap(_KeyFrames[i],_KeyFrames[chosenj]);
+
+		//debug
+		int sum = 0;
+		for(int j = 0; j < ncam; j++) sum += debugarray[j];
+		if(sum != 1)
+		{
+			if(sum == 0)
+			{
+				cout << "No camera is set. Incorrect case." << endl;
+				return -3;
+			}
+			else
+			{
+				cout << "More than one cameras are set. Incorrect case." << endl;
 				return -4;
 			}
-
-			Point2d p = _measurements[i][j];
-			_KeyFrames[cameraidx].setKeypoints(featureidx,p);
 		}
+		delete [] debugarray;
+	}
+
+	//debug
+	for(int i = 0; i < ncam; i++)
+	{
+		if(_KeyFrames[i].getName() != _jpgfolder+_names[i])
+		{
+			cout << "Error in exchange." << endl;
+			return -4;
+		}
+	}
+
+	//Set poionts' data;
+	for(int i = 0; i < npoints; i++)
+	{
+		_PC.push_back(SpatialPoint(i, _point_data[i], _measurements_cidxs[i], _measurements_fidxs[i]));
+
+		int nfeatures = (int)_measurements[i].size();
+		if(_measurements[i].size()!=_measurements_cidxs[i].size())
+		{
+			cout << "Error: The size of measures and idxes are not same." << endl;
+			return -5;
+		}
+
+		//set 2D features, 3D pionts
+		for(int j = 0; j < nfeatures; j++)
+		{
+			int cameraidx = _measurements_cidxs[i][j];
+			int featureidx = _measurements_fidxs[i][j];
+			if(cameraidx >= ncam)
+			{
+				cout << "Error: The idx of camera cannot be found." << endl;
+				return -6;
+			}
+			Point2d p = _measurements[i][j];
+			//2D
+			if(_KeyFrames[cameraidx].setKeypoints(featureidx,p,true) < 0)
+			{
+				cout << "Error in setKeypoints." << endl;
+				return -7;
+			}
+			//3D
+			if(_KeyFrames[cameraidx].set3dPoints(featureidx,i) < 0)
+			{
+				cout << "Error in set3dPoints." << endl;
+				return -8;
+			}
+		}
+
 	}
 	return 1;
 }
 
 void System::MakeCameraView()
 {
-	CreateCameraViews();
+	int errorflag = 0;
+	if((errorflag = CreateCameraViews() < 0))
+		exit(errorflag);
+	cout << "Everything is all right." << endl;
+	//PrintAllKeypoints(0);
+	PrintAllFrames(0);
+}
+
+const void System::PrintAllKeypoints(int KeyFrameId) const {
+	int n = 0;
+	vector<cv::KeyPoint> kps = _KeyFrames[KeyFrameId].getKps();
+	for(auto i = kps.begin(); i!= kps.end(); i++)
+	{
+		if((*i).angle!=-1)
+		{
+			cout << "Key point "<< n << " exist at <" << (*i).pt.x << "," << (*i).pt.y << ">"
+					<< " for 3D point: " << _PC[_KeyFrames[KeyFrameId].getPts3dId()[n]].getPt3d() << endl;
+		}
+		n++;
+	}
+}
+
+const void System::PrintAllFrames(int Pt3dId) const {
+	vector<int> cidx = _PC[Pt3dId].getCameraIdx();
+	vector<int> fidx = _PC[Pt3dId].getFeatureIdx();
+	if(cidx.size() != fidx.size())
+		cout << "Error in Printing." << endl;
+	for(int i = 0; i < (int)cidx.size(); i++)
+	{
+		View v = _KeyFrames[cidx[i]];
+		vector<KeyPoint> k;
+		k.clear();
+		k.push_back(v.getKps()[v.fidx2kpsidx[fidx[i]]]);
+		cv::namedWindow(v.getName());
+		Mat out;
+		cv::drawKeypoints(v.getImg(), k, out);
+		imshow(v.getName(),out);
+	}
+	waitKey(0);
+	destroyAllWindows();
 }
 

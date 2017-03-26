@@ -18,10 +18,17 @@ using namespace cv;
 class SpatialPoint {
 public:
 	SpatialPoint();
-	int Create();
+	SpatialPoint(int _PointId, Point3d pt3d,
+			vector<int> CameraIdx,
+			vector<int> FeatureIdx);
 	virtual ~SpatialPoint();
+	const vector<int>& getCameraIdx() const;
+	const vector<int>& getFeatureIdx() const;
+	int getPointId() const;
+	const Point3d& getPt3d() const;
 
 private:
+	int _PointId;
 	Point3d _pt3d;
 	vector<int> _CameraIdx;
 	vector<int> _FeatureIdx;
