@@ -19,6 +19,7 @@ int main() {
 	s.VisualSFM("/mnt/hgfs/Shared/MediaSoc/dataset/sequences/KeyFrames/");
 	s.LoadNVM();
 	s.MakeCameraView();
+	s.MakeVirtualView("/mnt/hgfs/Shared/MediaSoc/dataset/sequences/KeyFrames/sfm2.nvm",30);
 	cout << "End" << endl;
 	return 0;
 }

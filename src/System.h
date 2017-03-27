@@ -30,6 +30,7 @@ public:
 	void LoadNVM(const string & nvm = "");
 	void LoadK(const string & CalibFile);
 	void MakeCameraView();
+	void MakeVirtualView(const string & nvmfile, int yaw_diff = 30);
 	void VisualSFM(const string & imagefolder);
 	const void PrintAllKeypoints(int KeyFrameId = 0) const;
 	const void PrintAllFrames(int Pt3dId = 0) const;
@@ -41,6 +42,9 @@ private:
 	int CreateOpencvKeypoints(string & imagefolder, int np, int noctave);
 	int StoreSiftFiles();
 
+	int CreateVirtualViews(const int CameraIdx, int yaw_diff = 30);
+	int VisualizeVirtualViews(const int CameraIdx, const string & name);
+
 private:
 	// Opencv sift variables
 	vector<vector<KeyPoint> > _opencv_keypoints;
@@ -50,6 +54,7 @@ private:
 	vector<SpatialPoint> _PC;
 	vector<View> _KeyFrames;
 	vector<VirtualView> _VirtualFrames;
+	vector<vector<int> > _Camera2Virtual;
 
 	// NVM variables
 	// 2D cameras

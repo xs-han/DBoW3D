@@ -278,7 +278,7 @@ struct CameraT_
         //t = - R * C
         for(int j = 0; j < 3; ++j) t[j] = -float_t(m[j][0] * c[0] + m[j][1] * c[1] + m[j][2] * c[2]);
     }
-    template <class Float>    void GetCameraCenter(Float c[3])
+    template <class Float>    void GetCameraCenter(Float c[3]) const
     {
         //C = - R' * t
         for(int j = 0; j < 3; ++j) c[j] = -float_t(m[0] [j]* t[0] + m[1][j] * t[1] + m[2][j] * t[2]);
@@ -314,6 +314,47 @@ struct CameraT_
         e[3] = - m[1][0];      e[4] = -m[1][1];     e[5] = -m[1][2];
         e[6] = -m[2][0];       e[7] = -m[2][1];     e[8] = -m[2][2] ;
 		T[0] = t[0];           T[1] = -t[1];		T[2] = -t[2];			
+	}
+
+	// mycode yaw-roll-pitch
+	template<class Float> void GetEulerianEngle(Float ea[3]) const
+	{
+		double q[4];
+		this->GetQuaternionRotation(q);
+
+		double ysqr = q[2] * q[2];
+
+		// roll (x-axis rotation)
+		double t0 = +2.0 * (q[0] * q[1] + q[2] * q[3]);
+		double t1 = +1.0 - 2.0 * (q[1] * q[1] + ysqr);
+		ea[1] = std::atan2(t0, t1);
+
+		// pitch (y-axis rotation)
+		double t2 = +2.0 * (q[0] * q[1] - q[3] * q[0]);
+		t2 = t2 > 1.0 ? 1.0 : t2;
+		t2 = t2 < -1.0 ? -1.0 : t2;
+		ea[2] = std::asin(t2);
+
+		// yaw (z-axis rotation)
+		double t3 = +2.0 * (q[0] * q[3] + q[1] * q[2]);
+		double t4 = +1.0 - 2.0 * (ysqr + q[3] * q[3]);
+		ea[0] = std::atan2(t3, t4);
+	}
+	template<class Float> void SetEulerianEngle(Float ea[3])
+	{
+		Float q[4];
+		double t0 = std::cos(ea[0] * 0.5);
+		double t1 = std::sin(ea[0] * 0.5);
+		double t2 = std::cos(ea[1] * 0.5);
+		double t3 = std::sin(ea[1] * 0.5);
+		double t4 = std::cos(ea[2] * 0.5);
+		double t5 = std::sin(ea[2] * 0.5);
+
+		q[0] = t0 * t2 * t4 + t1 * t3 * t5;
+		q[1] = t0 * t3 * t4 - t1 * t2 * t5;
+		q[2] = t0 * t2 * t5 + t1 * t3 * t4;
+		q[3] = t1 * t2 * t4 - t0 * t3 * t5;
+		this->SetQuaternionRotation(q);
 	}
 };
 
