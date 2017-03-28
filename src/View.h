@@ -48,13 +48,14 @@ public:
 	map<int, int> fidx2kpsidx;
 	map<int, int> kpsidx2fidx;
 
-protected:
+public:
 	string _name;
 	int _cidx = -1; // camera index
 	CameraT _C;
 	cv::Matx33d _R;
 	cv::Matx31d _T;
 
+public:
 	cv::Mat _img;
 	vector<cv::KeyPoint> _opencvkps;
 	cv::Mat _opencvfeatures;

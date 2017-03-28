@@ -558,6 +558,8 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 		CameraT v_C;
 		vector<cv::KeyPoint> key;
 		Mat desc;
+		desc.resize(0,0);
+		key.clear();
 
 		// two direacitons: +y and -y
 
@@ -580,6 +582,47 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 														-y);
 		v1.setCameraPose(v_C);
 
+		//TODO: Get features for virtual views. (key1, desc1)
+		for(auto p = _PC.begin(); p != _PC.end(); p++)
+		{
+			Matx31d point_camera = v1._R * (p->getPt3d()) + v1._T;
+			Matx31d point_homo_image = _K * point_camera;
+			Matx21d point_image(point_homo_image(0)/point_homo_image(2),
+								point_homo_image(1)/point_homo_image(2));
+			if(		point_camera(2) < 0 ||
+					point_image(0) < 0 ||
+					point_image(0) >= 640 ||
+					point_image(1) < 0 ||
+					point_image(1) >= 480)
+			{
+				continue;
+			}
+			Mat desc1 = Mat::zeros(1,128,CV_32F); int n = 0;
+			for(auto p_real_cameras = (p->_CameraIdx).begin(), p_real_features = (p->_FeatureIdx).begin();
+					p_real_cameras != (p->_CameraIdx).end() && p_real_features != (p->_FeatureIdx).end();
+					p_real_cameras++, p_real_features++)
+			{
+				if((*p_real_cameras) <= _KeyFrames[cidx].getCidx() && (*p_real_cameras) > _KeyFrames[cidx].getCidx() - 6)
+				{
+					desc1 = desc1 + _KeyFrames[*p_real_cameras]._features.row(_KeyFrames[*p_real_cameras].fidx2kpsidx[*p_real_features]);
+					n++;
+				}
+			}
+			if(n > 1)
+			{
+				desc1 = desc1 / n;
+				desc.push_back(desc1);
+				key.push_back(KeyPoint(point_image(0), point_image(1), 0, 0));
+				//cout << p->_PointId << " " << key.size()-1 << " " << point_image(0) << " " << point_image(1) << endl;
+			}
+			else
+			{
+				//cout << "Less than 2 frames keep this point." << endl;
+				continue;
+			}
+		}
+		v1._features = desc.clone();
+		v1._kps = key;
 
 		c2v.push_back((int)_VirtualFrames.size());
 		_VirtualFrames.push_back(v1);
@@ -594,8 +637,6 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 		v_C.SetCameraT(real_C);
 		v_C.SetRodriguesRotation(v_r);
 		v_C.SetCameraCenterAfterRotation(v_camc);
-		//TODO: Get features for virtual views. (key1, desc1)
-
 
 		// generate new virtual views
 		VirtualView v2("v"+(_KeyFrames[cidx].getName())+std::to_string(j),
@@ -605,6 +646,49 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 														desc,
 														y);
 		v2.setCameraPose(v_C);
+
+		//TODO: Get features for virtual views. (key1, desc1)
+		for(auto p = _PC.begin(); p != _PC.end(); p++)
+		{
+			Matx31d point_camera = v2._R * (p->getPt3d()) + v2._T;
+			Matx31d point_homo_image = _K * point_camera;
+			Matx21d point_image(point_homo_image(0)/point_homo_image(2),
+								point_homo_image(1)/point_homo_image(2));
+			if(		point_camera(2) < 0 ||
+					point_image(0) < 0 ||
+					point_image(0) >= 640 ||
+					point_image(1) < 0 ||
+					point_image(1) >= 480)
+			{
+				continue;
+			}
+			Mat desc1 = Mat::zeros(1,128,CV_32F); int n = 0;
+			for(auto p_real_cameras = (p->_CameraIdx).begin(), p_real_features = (p->_FeatureIdx).begin();
+					p_real_cameras != (p->_CameraIdx).end() && p_real_features != (p->_FeatureIdx).end();
+					p_real_cameras++, p_real_features++)
+			{
+				if((*p_real_cameras) <= _KeyFrames[cidx].getCidx() && (*p_real_cameras) > _KeyFrames[cidx].getCidx() - 6)
+				{
+					desc1 = desc1 + _KeyFrames[*p_real_cameras]._features.row(_KeyFrames[*p_real_cameras].fidx2kpsidx[*p_real_features]);
+					n++;
+				}
+			}
+			if(n > 1)
+			{
+				desc1 = desc1 / n;
+				desc.push_back(desc1);
+				key.push_back(KeyPoint(point_image(0), point_image(1), 0, 0));
+				//cout << p->_PointId << " " << key.size()-1 << " " << point_image(0) << " " << point_image(1) << endl;
+			}
+			else
+			{
+				//cout << "Less than 2 frames keep this point." << endl;
+				continue;
+			}
+		}
+		v2._features = desc.clone();
+		v2._kps = key;
+
 		c2v.push_back((int)_VirtualFrames.size());
 		_VirtualFrames.push_back(v2);
 	}

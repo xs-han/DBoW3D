@@ -19,7 +19,7 @@ SpatialPoint::~SpatialPoint() {
 SpatialPoint::SpatialPoint(int PointId, Point3d pt3d, vector<int> CameraIdx,
 		vector<int> FeatureIdx):
 				_PointId(PointId),
-				_pt3d(pt3d),
+				_pt3d(pt3d.x, pt3d.y, pt3d.z),
 				_CameraIdx(CameraIdx),
 				_FeatureIdx(FeatureIdx)
 {
@@ -38,7 +38,7 @@ int SpatialPoint::getPointId() const {
 	return _PointId;
 }
 
-const Point3d& SpatialPoint::getPt3d() const {
+const Matx31d& SpatialPoint::getPt3d() const {
 	return _pt3d;
 }
 // Create point from 3D coordinate and corresponding 2D key points

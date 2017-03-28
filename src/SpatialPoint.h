@@ -25,11 +25,11 @@ public:
 	const vector<int>& getCameraIdx() const;
 	const vector<int>& getFeatureIdx() const;
 	int getPointId() const;
-	const Point3d& getPt3d() const;
+	const Matx31d& getPt3d() const;
 
-private:
+public:
 	int _PointId;
-	Point3d _pt3d;
+	Matx31d _pt3d;
 	vector<int> _CameraIdx;
 	vector<int> _FeatureIdx;
 };
