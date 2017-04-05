@@ -45,7 +45,7 @@ private:
 	int CreateVirtualViews(const int CameraIdx, int yaw_diff = 30);
 	int VisualizeVirtualViews(const int CameraIdx, const string & name);
 
-private:
+public:
 	// Opencv sift variables
 	vector<vector<KeyPoint> > _opencv_keypoints;
 	vector<Mat> _opencv_descriptors;

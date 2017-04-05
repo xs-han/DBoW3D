@@ -26,8 +26,8 @@ void System::VisualSFM(const string & imagefolder) {
 	// Store all features in .sift files
 //	if((errorflag = StoreSiftFiles()) < 0)
 //		exit(errorflag);
-	// TODO: Add integrated VisualSFM commands with socket
-	//system("VisualSFM");
+//	// TODO: Add integrated VisualSFM commands with socket
+//	system("VisualSFM");
 }
 
 int System::CreateOpencvKeypoints(string & jpgfolder, int np, int noctave) {
@@ -541,7 +541,7 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 	// If # of cameras before is smaller than 10, we don't generate virtual views
 	vector<int> c2v;
 	c2v.clear();
-	if(_KeyFrames[cidx].getCidx() < 10)
+	if(_KeyFrames[cidx].getCidx() < 2)
 	{
 		_Camera2Virtual.push_back(c2v);
 		return 0;
@@ -575,11 +575,12 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 
 		// generate new virtual views
 		VirtualView v1("v"+(_KeyFrames[cidx].getName())+std::to_string(-j),
-														v_cidx++ ,
+														_KeyFrames[cidx].getCidx(),
 														cv::Mat(),
 														key,
 														desc,
 														-y);
+		v_cidx++;
 		v1.setCameraPose(v_C);
 
 		//TODO: Get features for virtual views. (key1, desc1)
@@ -602,7 +603,7 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 					p_real_cameras != (p->_CameraIdx).end() && p_real_features != (p->_FeatureIdx).end();
 					p_real_cameras++, p_real_features++)
 			{
-				if((*p_real_cameras) <= _KeyFrames[cidx].getCidx() && (*p_real_cameras) > _KeyFrames[cidx].getCidx() - 6)
+				if((*p_real_cameras) <= _KeyFrames[cidx].getCidx() && (*p_real_cameras) > _KeyFrames[cidx].getCidx() - 100)
 				{
 					desc1 = desc1 + _KeyFrames[*p_real_cameras]._features.row(_KeyFrames[*p_real_cameras].fidx2kpsidx[*p_real_features]);
 					n++;
@@ -613,7 +614,7 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 				desc1 = desc1 / n;
 				desc.push_back(desc1);
 				key.push_back(KeyPoint(point_image(0), point_image(1), 0, 0));
-				//cout << p->_PointId << " " << key.size()-1 << " " << point_image(0) << " " << point_image(1) << endl;
+				cout << p->_PointId << " " << key.size()-1 << " " << point_image(0) << " " << point_image(1) << endl;
 			}
 			else
 			{
@@ -640,11 +641,12 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 
 		// generate new virtual views
 		VirtualView v2("v"+(_KeyFrames[cidx].getName())+std::to_string(j),
-														v_cidx++ ,
+														_KeyFrames[cidx].getCidx(),
 														cv::Mat(),
 														key,
 														desc,
 														y);
+		v_cidx++;
 		v2.setCameraPose(v_C);
 
 		//TODO: Get features for virtual views. (key1, desc1)
@@ -667,7 +669,7 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 					p_real_cameras != (p->_CameraIdx).end() && p_real_features != (p->_FeatureIdx).end();
 					p_real_cameras++, p_real_features++)
 			{
-				if((*p_real_cameras) <= _KeyFrames[cidx].getCidx() && (*p_real_cameras) > _KeyFrames[cidx].getCidx() - 6)
+				if((*p_real_cameras) <= _KeyFrames[cidx].getCidx() && (*p_real_cameras) > _KeyFrames[cidx].getCidx() - 100)
 				{
 					desc1 = desc1 + _KeyFrames[*p_real_cameras]._features.row(_KeyFrames[*p_real_cameras].fidx2kpsidx[*p_real_features]);
 					n++;
@@ -678,7 +680,7 @@ int System::CreateVirtualViews(const int cidx, int yaw_diff) {
 				desc1 = desc1 / n;
 				desc.push_back(desc1);
 				key.push_back(KeyPoint(point_image(0), point_image(1), 0, 0));
-				//cout << p->_PointId << " " << key.size()-1 << " " << point_image(0) << " " << point_image(1) << endl;
+				cout << p->_PointId << " " << key.size()-1 << " " << point_image(0) << " " << point_image(1) << endl;
 			}
 			else
 			{
