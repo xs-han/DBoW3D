@@ -7,9 +7,9 @@
 //============================================================================
 
 #include <iostream>
-#include "./DBoW3/DBoW3.h"
-#include "./DBoW3/DescManip.h"
-#include "./DBoW3/Vocabulary.h"
+#include "../DBoW3/DBoW3.h"
+#include "../DBoW3/DescManip.h"
+#include "../DBoW3/Vocabulary.h"
 #include "System.h"
 
 using namespace std;
