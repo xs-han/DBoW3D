@@ -78,3 +78,5 @@ bin
 lib
 *.yml.gz
 CMakeLists.txt.user*
+.idea
+cmake-*
