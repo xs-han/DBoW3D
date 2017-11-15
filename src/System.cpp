@@ -21,13 +21,13 @@ void System::VisualSFM(const string & imagefolder) {
 	int errorflag;
 	_jpgfolder = imagefolder;
 	// Get all features
-	if ((errorflag = CreateOpencvKeypoints(_jpgfolder, 3000, 16) < 0))
+	if ((errorflag = CreateOpencvKeypoints(_jpgfolder, 500, 8) < 0))
 		exit(errorflag);
 	// Store all features in .sift files
-//	if((errorflag = StoreSiftFiles()) < 0)
-//		exit(errorflag);
+	if((errorflag = StoreSiftFiles()) < 0)
+		exit(errorflag);
 //	// TODO: Add integrated VisualSFM commands with socket
-//	system("VisualSFM");
+	system("VisualSFM");
 }
 
 int System::CreateOpencvKeypoints(string & jpgfolder, int np, int noctave) {

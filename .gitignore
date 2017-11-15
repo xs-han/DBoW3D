@@ -76,7 +76,7 @@ lib
 
 bin
 lib
-/*.yml.gz
+*.yml.gz
 CMakeLists.txt.user*
 .idea
 cmake-*

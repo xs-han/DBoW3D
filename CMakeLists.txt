@@ -25,3 +25,10 @@ target_link_libraries(main DBoW3 ${OpenCV_LIBS})
 
 FILE(GLOB_RECURSE TESTS_DIR_INCLUDE "${PROJECT_SOURCE_DIR}/include/*.h")
 add_custom_target(headers SOURCES ${TESTS_DIR_INCLUDE})
+
+# util Compiloation
+add_executable(calibration util/camera_calibration.cpp)
+target_link_libraries(calibration ${OpenCV_LIBS})
+
+add_executable(ex_keyframes util/extract_keyframes.cpp src/VideoStream.cpp src/ImageStream.cpp)
+target_link_libraries(ex_keyframes ${OpenCV_LIBS})
